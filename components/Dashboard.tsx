@@ -1,7 +1,7 @@
 import React from 'react';
 import { Timer } from './Timer';
 import { TodoItem } from '../types';
-import { Play, Pause, Plus, CheckCircle2, Circle } from 'lucide-react';
+import { Play, Pause, Plus, CheckCircle2, Circle, ExternalLink, MonitorUp } from 'lucide-react';
 
 interface DashboardProps {
   todos: TodoItem[];
@@ -32,18 +32,42 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const openMiniMode = () => {
+    const width = 350;
+    const height = 500;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    window.open(
+      `${window.location.pathname}?mode=mini`, 
+      'FocusFlowMini', 
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,alwaysOnTop=yes`
+    );
+  };
+
   const activeTodos = todos.filter(t => !t.completed);
   const completedTodos = todos.filter(t => t.completed);
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 h-full">
       {/* Left Column: Timer & Focus */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-100 p-8 min-h-[400px]">
-        <div className="mb-8">
+      <div className="relative flex-1 flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-100 p-8 min-h-[400px]">
+        
+        {/* Top Right Pop Out Button */}
+        <button 
+          onClick={openMiniMode}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+          title="Open Mini Timer Window"
+        >
+          <ExternalLink size={18} />
+          <span className="hidden sm:inline">Pop Out</span>
+        </button>
+
+        <div className="mb-8 mt-4">
            <Timer timeLeft={timeLeft} totalSeconds={totalTime} isActive={isActive} />
         </div>
         
-        <div className="flex gap-4">
+        <div className="flex flex-col items-center gap-4 w-full">
           <button
             onClick={onToggleTimer}
             className={`flex items-center gap-2 px-8 py-4 rounded-full font-bold text-lg transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 ${
@@ -54,9 +78,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
           >
             {isActive ? <><Pause fill="currentColor" /> Pause</> : <><Play fill="currentColor" /> Start Focus</>}
           </button>
+
+          <button 
+             onClick={openMiniMode}
+             className="text-indigo-600 text-sm font-medium hover:underline flex items-center gap-1.5 opacity-80 hover:opacity-100"
+          >
+             <MonitorUp size={14} />
+             Switch to Mini Window
+          </button>
         </div>
         
-        <p className="mt-6 text-slate-400 text-sm">
+        <p className="mt-8 text-slate-400 text-sm">
            Interval is set to {Math.floor(totalTime / 60)} minutes.
         </p>
       </div>

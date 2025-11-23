@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PictureInPicture, ExternalLink } from 'lucide-react';
+import { PictureInPicture } from 'lucide-react';
 
 interface TimerProps {
   totalSeconds: number;
@@ -137,19 +137,6 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
     return () => video.removeEventListener('leavepictureinpicture', onLeavePip);
   }, []);
 
-  const openMiniMode = () => {
-    const width = 350;
-    const height = 500;
-    const left = (window.screen.width - width) / 2;
-    const top = (window.screen.height - height) / 2;
-    
-    window.open(
-      `${window.location.pathname}?mode=mini`, 
-      'FocusFlowMini', 
-      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,alwaysOnTop=yes`
-    );
-  };
-
   return (
     <div className={`relative flex items-center justify-center ${isMini ? 'w-48 h-48' : 'w-64 h-64'}`}>
       {/* Outer Circle Track */}
@@ -181,29 +168,16 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
             {isActive ? 'Focusing' : 'Paused'}
         </span>
         
-        {/* External Window Controls - Only show in Main Mode */}
+        {/* PiP Button - Small and Subtle */}
         {!isMini && (
-          <div className="flex flex-col items-center gap-2 mt-4">
-             {/* Pop Out Button (Highlight this one) */}
-             <button 
-              onClick={openMiniMode}
-              className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-full hover:bg-indigo-100 transition-all text-sm font-medium border border-indigo-100 shadow-sm"
-              title="Open standalone timer window"
-            >
-              <ExternalLink size={14} />
-              <span>Pop out</span>
-            </button>
-
-            {/* PiP Button */}
-            <button 
-              onClick={togglePiP}
-              className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs transition-all ${isPipActive ? 'text-indigo-600 bg-slate-50' : 'text-slate-400 hover:text-slate-600'}`}
-              title={isPipActive ? "Close Floating Timer" : "Float Timer (PiP)"}
-            >
-              <PictureInPicture size={14} />
-              <span>{isPipActive ? 'Close Float' : 'Float Mini'}</span>
-            </button>
-          </div>
+          <button 
+            onClick={togglePiP}
+            className={`mt-4 flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all ${isPipActive ? 'text-indigo-600 bg-indigo-50 ring-1 ring-indigo-100' : 'text-slate-300 hover:text-slate-500 hover:bg-slate-50'}`}
+            title={isPipActive ? "Close Floating Timer" : "Watch in PiP Mode"}
+          >
+            <PictureInPicture size={12} />
+            <span>{isPipActive ? 'Close' : 'PIP'}</span>
+          </button>
         )}
       </div>
 
