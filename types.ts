@@ -18,6 +18,14 @@ export interface DayRecord {
   logs: IntervalLog[];
   morningReview?: string; // Manual or AI summary of yesterday done in the morning
   status: 'active' | 'completed';
+  dailySummary?: string; // AI generated summary for the day (can be generated anytime)
+}
+
+export interface WeeklyRecord {
+  weekStartDate: string; // YYYY-MM-DD (Monday)
+  aiReview: string;
+  totalFocusMinutes: number;
+  totalTasksCompleted: number;
 }
 
 export type AIProvider = 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'custom';

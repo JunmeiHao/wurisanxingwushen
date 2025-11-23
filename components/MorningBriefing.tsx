@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DayRecord, TodoItem } from '../types';
-import { getYesterdayDateString, getDayRecord, getTodayDateString } from '../services/storageService';
+import { getYesterdayDateString, getDayRecord } from '../services/storageService';
 import { generateDaySummary, generateMorningPlanSuggestion } from '../services/aiService';
 import { Loader2, CheckSquare, Calendar, Sparkles, Plus, Trash2 } from 'lucide-react';
 
@@ -26,14 +26,14 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
       const yRec = getDayRecord(yStr);
       setYesterdayRecord(yRec);
 
-      // Always attempt generation, the service handles key checks
+      // 总是尝试生成，服务会处理 Key 的检查
       if (yRec) {
         setLoadingSummary(true);
         try {
           const summary = await generateDaySummary(yRec);
           setAiSummary(summary);
           
-          // Get plan suggestions
+          // 获取计划建议
           const suggestions = await generateMorningPlanSuggestion(yRec, []);
           setPlanSuggestion(suggestions);
         } finally {
@@ -63,23 +63,23 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
 
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden min-h-[600px] flex flex-col">
-      {/* Header */}
+      {/* 头部 */}
       <div className="bg-indigo-600 p-8 text-white">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-           <Sparkles className="text-yellow-300" /> Morning Briefing
+           <Sparkles className="text-yellow-300" /> 晨间简报
         </h1>
         <p className="text-indigo-100">
-          {step === 1 ? "Let's review your progress from yesterday." : "Plan your day for success."}
+          {step === 1 ? "让我们回顾一下昨天的进度。" : "为今天的成功做计划。"}
         </p>
       </div>
 
-      {/* Body */}
+      {/* 内容区 */}
       <div className="flex-1 p-8">
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between">
                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
-                <Calendar size={20} className="text-indigo-500"/> Yesterday's Review ({yesterdayRecord?.date || 'No Data'})
+                <Calendar size={20} className="text-indigo-500"/> 昨天回顾 ({yesterdayRecord?.date || '无数据'})
                </h2>
             </div>
 
@@ -87,37 +87,37 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
                   {loadingSummary ? (
                     <div className="flex items-center gap-3 text-indigo-600">
-                      <Loader2 className="animate-spin" /> Analyzing logs with AI...
+                      <Loader2 className="animate-spin" /> AI 正在分析日志...
                     </div>
                   ) : (
                     <div className="prose prose-slate max-w-none">
-                       <div className="mb-4 font-medium text-slate-500 uppercase text-xs tracking-wider">AI Summary</div>
+                       <div className="mb-4 font-medium text-slate-500 uppercase text-xs tracking-wider">AI 总结</div>
                        {aiSummary ? (
                          <div className="whitespace-pre-wrap">{aiSummary}</div>
                        ) : (
-                         <p className="text-slate-400 italic">No AI summary available.</p>
+                         <p className="text-slate-400 italic">暂无 AI 总结。</p>
                        )}
                     </div>
                   )}
 
                   <div className="mt-6 pt-6 border-t border-slate-200">
-                    <h3 className="font-medium text-slate-700 mb-3">Raw Logs</h3>
+                    <h3 className="font-medium text-slate-700 mb-3">原始日志</h3>
                     <ul className="space-y-2">
                       {yesterdayRecord.logs.map(log => (
                         <li key={log.id} className="text-sm text-slate-600 flex gap-3">
                            <span className="font-mono text-slate-400 text-xs py-0.5">
-                             {new Date(log.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                             {new Date(log.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'})}
                            </span>
                            <span>{log.content}</span>
                         </li>
                       ))}
-                      {yesterdayRecord.logs.length === 0 && <li className="text-slate-400 italic">No logs recorded.</li>}
+                      {yesterdayRecord.logs.length === 0 && <li className="text-slate-400 italic">没有记录日志。</li>}
                     </ul>
                   </div>
                </div>
             ) : (
               <div className="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl">
-                <p className="text-slate-500">No records found for yesterday. Start fresh!</p>
+                <p className="text-slate-500">未找到昨天的记录。开始新的一天吧！</p>
               </div>
             )}
 
@@ -126,7 +126,7 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
                 onClick={() => setStep(2)}
                 className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
               >
-                Next: Plan Today
+                下一步: 规划今天
               </button>
             </div>
           </div>
@@ -135,18 +135,18 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
         {step === 2 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
              <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
-                <CheckSquare size={20} className="text-indigo-500"/> Today's Goals
+                <CheckSquare size={20} className="text-indigo-500"/> 今日目标
              </h2>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Left: Input */}
+                {/* 左: 输入 */}
                 <div className="space-y-4">
                   <form onSubmit={handleAddTodo} className="flex gap-2">
                     <input
                       type="text"
                       value={newTodoText}
                       onChange={(e) => setNewTodoText(e.target.value)}
-                      placeholder="What needs to be done?"
+                      placeholder="今天需要完成什么？"
                       className="flex-1 px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                       autoFocus
                     />
@@ -172,23 +172,23 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
                       </div>
                     ))}
                     {todos.length === 0 && (
-                      <p className="text-center text-slate-400 py-4">No tasks added yet.</p>
+                      <p className="text-center text-slate-400 py-4">尚未添加任务。</p>
                     )}
                   </div>
                 </div>
 
-                {/* Right: AI Suggestions */}
+                {/* 右: AI 建议 */}
                 <div className="bg-indigo-50 rounded-xl p-6 border border-indigo-100">
                    <h3 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
-                     <Sparkles size={16} /> AI Suggestions
+                     <Sparkles size={16} /> AI 建议
                    </h3>
                    {loadingSummary ? (
                      <div className="flex items-center gap-2 text-indigo-600 text-sm">
-                        <Loader2 className="animate-spin" size={16} /> Thinking...
+                        <Loader2 className="animate-spin" size={16} /> 思考中...
                      </div>
                    ) : (
                      <div className="text-sm text-indigo-800 whitespace-pre-wrap leading-relaxed">
-                       {planSuggestion || "Add tasks to get started, or wait for AI analysis based on history."}
+                       {planSuggestion || "添加任务以开始，或等待 AI 基于历史进行分析。"}
                      </div>
                    )}
                 </div>
@@ -199,13 +199,13 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
                   onClick={() => setStep(1)}
                   className="text-slate-500 hover:text-slate-700 font-medium"
                 >
-                  Back
+                  返回
                 </button>
                 <button 
                   onClick={() => onComplete(todos)}
                   className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-lg shadow-green-200 transition-all hover:scale-105"
                 >
-                  Start Day
+                  开启一天
                 </button>
              </div>
           </div>
