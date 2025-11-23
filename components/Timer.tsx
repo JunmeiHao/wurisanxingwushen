@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { PictureInPicture } from 'lucide-react';
+import { PictureInPicture, ExternalLink } from 'lucide-react';
 
 interface TimerProps {
   totalSeconds: number;
   timeLeft: number;
   isActive: boolean;
+  isMini?: boolean;
 }
 
-export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive }) => {
+export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, isMini = false }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPipActive, setIsPipActive] = useState(false);
@@ -136,8 +137,21 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive }
     return () => video.removeEventListener('leavepictureinpicture', onLeavePip);
   }, []);
 
+  const openMiniMode = () => {
+    const width = 350;
+    const height = 500;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    window.open(
+      `${window.location.pathname}?mode=mini`, 
+      'FocusFlowMini', 
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+    );
+  };
+
   return (
-    <div className="relative flex items-center justify-center w-64 h-64">
+    <div className={`relative flex items-center justify-center ${isMini ? 'w-48 h-48' : 'w-64 h-64'}`}>
       {/* Outer Circle Track */}
       <svg className="w-full h-full transform -rotate-90 drop-shadow-xl">
         <circle
@@ -162,19 +176,30 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive }
       
       {/* Time Text & Controls */}
       <div className="absolute flex flex-col items-center justify-center text-slate-700">
-        <span className="text-6xl font-bold tracking-tighter font-mono">{timeString}</span>
+        <span className={`${isMini ? 'text-4xl' : 'text-6xl'} font-bold tracking-tighter font-mono`}>{timeString}</span>
         <span className="text-sm font-medium text-slate-400 mt-2 uppercase tracking-widest">
             {isActive ? 'Focusing' : 'Paused'}
         </span>
         
-        {/* Pop-out Button */}
-        <button 
-          onClick={togglePiP}
-          className={`mt-3 p-2 rounded-full transition-all duration-200 ${isPipActive ? 'bg-indigo-100 text-indigo-600' : 'text-slate-300 hover:text-indigo-600 hover:bg-slate-50'}`}
-          title={isPipActive ? "Close Floating Timer" : "Pop out Timer to Desktop"}
-        >
-          <PictureInPicture size={20} />
-        </button>
+        {/* External Window Controls - Only show in Main Mode */}
+        {!isMini && (
+          <div className="flex gap-2 mt-3">
+            <button 
+              onClick={togglePiP}
+              className={`p-2 rounded-full transition-all duration-200 ${isPipActive ? 'bg-indigo-100 text-indigo-600' : 'text-slate-300 hover:text-indigo-600 hover:bg-slate-50'}`}
+              title={isPipActive ? "Close Floating Timer" : "Float Timer (PiP)"}
+            >
+              <PictureInPicture size={20} />
+            </button>
+            <button 
+              onClick={openMiniMode}
+              className="p-2 rounded-full text-slate-300 hover:text-indigo-600 hover:bg-slate-50 transition-all duration-200"
+              title="Pop out Window"
+            >
+              <ExternalLink size={20} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Hidden Canvas & Video for PiP Stream */}

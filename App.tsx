@@ -4,7 +4,11 @@ import {
   History, 
   Settings as SettingsIcon, 
   LogOut, 
-  Coffee 
+  Coffee,
+  Play,
+  Pause,
+  Save,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   getOrInitTodayRecord, 
@@ -18,6 +22,7 @@ import { Dashboard } from './components/Dashboard';
 import { MorningBriefing } from './components/MorningBriefing';
 import { HistoryView } from './components/HistoryView';
 import { Modal } from './components/ui/Modal';
+import { Timer } from './components/Timer';
 
 type View = 'dashboard' | 'history' | 'settings';
 
@@ -36,26 +41,82 @@ const App: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const timerRef = useRef<number | null>(null);
   const [intervalLogText, setIntervalLogText] = useState("");
+  
+  // Mini Mode State
+  const [isMiniMode, setIsMiniMode] = useState(false);
+  const channelRef = useRef<BroadcastChannel | null>(null);
 
   // Initialization
   useEffect(() => {
+    // Check for Mini Mode query param
+    const params = new URLSearchParams(window.location.search);
+    const mini = params.get('mode') === 'mini';
+    setIsMiniMode(mini);
+
     const record = getOrInitTodayRecord();
     setTodayRecord(record);
-    // If morning review not done (simple check: if morningReview is empty), prompt it
-    // In a real app, add a boolean flag to record like 'briefingCompleted'
-    if (!record.morningReview && record.logs.length === 0 && record.todos.length === 0) {
+    // Only prompt briefing in main mode
+    if (!mini && !record.morningReview && record.logs.length === 0 && record.todos.length === 0) {
        setIsMorningBriefingOpen(true);
     }
   }, []);
+
+  // Window Synchronization
+  useEffect(() => {
+    const channel = new BroadcastChannel('focusflow_sync');
+    channelRef.current = channel;
+
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      
+      switch (type) {
+        case 'SYNC_STATE':
+          // Update local state from broadcast
+          if (payload.timeLeft !== undefined && Math.abs(payload.timeLeft - timeLeft) > 2) {
+             setTimeLeft(payload.timeLeft);
+          }
+          if (payload.isActive !== undefined) setIsActive(payload.isActive);
+          break;
+        case 'ACTION':
+          if (payload.action === 'START') setIsActive(true);
+          if (payload.action === 'PAUSE') setIsActive(false);
+          if (payload.action === 'RESET') {
+             setIsActive(false);
+             setTimeLeft(settings.intervalMinutes * 60);
+          }
+          break;
+        case 'TIMER_COMPLETE':
+          setIsActive(false);
+          setTimeLeft(0);
+          handleTimerComplete(false); // Handle UI but don't re-broadcast
+          break;
+        case 'DATA_UPDATED':
+          setTodayRecord(getOrInitTodayRecord());
+          break;
+      }
+    };
+
+    return () => channel.close();
+  }, [timeLeft, settings.intervalMinutes]); // Re-bind if necessary, though logic handles stateless updates
 
   // Timer Logic
   useEffect(() => {
     if (isActive && timeLeft > 0) {
       timerRef.current = window.setTimeout(() => {
-        setTimeLeft((prev) => prev - 1);
+        const newTime = timeLeft - 1;
+        setTimeLeft(newTime);
+        
+        // Broadcast sync occasionally (every 5 seconds) to keep windows aligned
+        // or just rely on start/stop. Let's do a loose sync.
+        if (newTime % 5 === 0 && channelRef.current) {
+            channelRef.current.postMessage({
+                type: 'SYNC_STATE',
+                payload: { timeLeft: newTime, isActive: true }
+            });
+        }
       }, 1000);
     } else if (timeLeft === 0 && isActive) {
-      handleTimerComplete();
+      handleTimerComplete(true);
     }
 
     return () => {
@@ -63,42 +124,42 @@ const App: React.FC = () => {
     };
   }, [isActive, timeLeft]);
 
-  const handleTimerComplete = () => {
+  const handleTimerComplete = (shouldBroadcast = true) => {
     setIsActive(false);
     
-    // 1. Play Sound
+    // Play sound (both windows will try, browser might block one, that's fine)
     if (settings.soundEnabled) {
        try {
-         // Using a distinct "ding" sound
          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a');
          audio.volume = 0.5;
-         audio.play();
-       } catch(e) {
-         console.error("Audio play failed", e);
-       }
+         audio.play().catch(() => {});
+       } catch(e) {}
     }
 
-    // 2. Send Sticky Notification
-    if (settings.notificationsEnabled && Notification.permission === "granted") {
+    // Notification (only from Main window ideally, or both is fine as they dedupe by tag)
+    if (settings.notificationsEnabled && Notification.permission === "granted" && !isMiniMode) {
       try {
         const n = new Notification("Time's Up!", { 
             body: "Click here to log your accomplishment.",
-            requireInteraction: true, // Keep notification on screen until clicked
+            requireInteraction: true,
             tag: 'focusflow-timer'
         });
-        
-        // Key feature: Click notification to bring window to front
         n.onclick = () => {
           window.focus();
           n.close();
           setIsIntervalModalOpen(true);
         };
-      } catch (e) {
-        console.error("Notification failed", e);
-      }
+      } catch (e) {}
+    } else if (isMiniMode) {
+        // If mini mode, bring window to front if possible
+        window.focus();
     }
 
     setIsIntervalModalOpen(true);
+
+    if (shouldBroadcast && channelRef.current) {
+        channelRef.current.postMessage({ type: 'TIMER_COMPLETE' });
+    }
   };
 
   const requestNotificationPermission = () => {
@@ -107,12 +168,18 @@ const App: React.FC = () => {
     }
   };
 
-  // Actions
   const toggleTimer = () => {
-    if (!isActive) {
-      requestNotificationPermission();
+    const newState = !isActive;
+    setIsActive(newState);
+    if (newState) requestNotificationPermission();
+
+    // Broadcast action
+    if (channelRef.current) {
+        channelRef.current.postMessage({ 
+            type: 'ACTION', 
+            payload: { action: newState ? 'START' : 'PAUSE' } 
+        });
     }
-    setIsActive(!isActive);
   };
 
   const handleMorningComplete = (newTodos: TodoItem[]) => {
@@ -120,11 +187,14 @@ const App: React.FC = () => {
     const updated = { 
         ...todayRecord, 
         todos: newTodos, 
-        morningReview: "Completed" // Marker that briefing is done
+        morningReview: "Completed" 
     };
     setTodayRecord(updated);
     saveDayRecord(updated);
     setIsMorningBriefingOpen(false);
+    
+    // Broadcast data update
+    channelRef.current?.postMessage({ type: 'DATA_UPDATED' });
   };
 
   const handleIntervalLogSubmit = () => {
@@ -148,8 +218,12 @@ const App: React.FC = () => {
     setIntervalLogText("");
     setIsIntervalModalOpen(false);
     setTimeLeft(settings.intervalMinutes * 60);
-    // Optional: Auto restart or wait for user
-    // setIsActive(true); 
+
+    // Broadcast updates
+    if (channelRef.current) {
+        channelRef.current.postMessage({ type: 'DATA_UPDATED' });
+        channelRef.current.postMessage({ type: 'ACTION', payload: { action: 'RESET' } });
+    }
   };
 
   const handleAddTodo = (text: string) => {
@@ -162,6 +236,7 @@ const App: React.FC = () => {
     const updated = { ...todayRecord, todos: [...todayRecord.todos, newTodo] };
     setTodayRecord(updated);
     saveDayRecord(updated);
+    channelRef.current?.postMessage({ type: 'DATA_UPDATED' });
   };
 
   const handleToggleTodo = (id: string) => {
@@ -172,18 +247,87 @@ const App: React.FC = () => {
     const updated = { ...todayRecord, todos: updatedTodos };
     setTodayRecord(updated);
     saveDayRecord(updated);
+    channelRef.current?.postMessage({ type: 'DATA_UPDATED' });
   };
 
   const handleUpdateSettings = (newSettings: Partial<AppSettings>) => {
       const updated = { ...settings, ...newSettings };
       setSettings(updated);
       saveSettings(updated);
-      // If changing interval, reset timer if not active
       if (newSettings.intervalMinutes && !isActive) {
           setTimeLeft(newSettings.intervalMinutes * 60);
       }
   };
 
+  // --- RENDER: MINI MODE ---
+  if (isMiniMode) {
+    return (
+      <div className="h-screen w-screen bg-slate-50 flex flex-col overflow-hidden">
+        {/* Header/Draggable area */}
+        <div className="h-6 bg-slate-100 w-full flex items-center justify-center drag-handle cursor-move">
+           <div className="w-10 h-1 rounded-full bg-slate-300" />
+        </div>
+
+        {isIntervalModalOpen ? (
+          // Log Input View
+          <div className="flex-1 p-6 flex flex-col animate-in fade-in duration-300">
+             <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full mb-3">
+                   <CheckCircle2 size={24} />
+                </div>
+                <h2 className="text-xl font-bold text-slate-800">Time's Up!</h2>
+                <p className="text-slate-500 text-sm">What did you achieve?</p>
+             </div>
+             
+             <textarea 
+               className="flex-1 w-full p-4 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none shadow-sm text-slate-700"
+               placeholder="I worked on..."
+               value={intervalLogText}
+               onChange={(e) => setIntervalLogText(e.target.value)}
+               autoFocus
+             />
+             
+             <button 
+               onClick={handleIntervalLogSubmit}
+               disabled={!intervalLogText.trim()}
+               className="mt-4 w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+             >
+               <Save size={18} /> Save Log
+             </button>
+          </div>
+        ) : (
+          // Timer View
+          <div className="flex-1 flex flex-col items-center justify-center p-4">
+             <div className="scale-75 origin-center">
+               <Timer 
+                 timeLeft={timeLeft} 
+                 totalSeconds={settings.intervalMinutes * 60} 
+                 isActive={isActive}
+                 isMini={true}
+               />
+             </div>
+             
+             <button
+                onClick={toggleTimer}
+                className={`mt-4 flex items-center gap-2 px-6 py-2 rounded-full font-bold shadow-md transition-all ${
+                  isActive 
+                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' 
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                {isActive ? <><Pause size={18} fill="currentColor" /> Pause</> : <><Play size={18} fill="currentColor" /> Start</>}
+              </button>
+              
+              <div className="mt-6 text-xs text-slate-400 font-medium">
+                 {todayRecord?.logs.length || 0} sessions today
+              </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // --- RENDER: MAIN APP ---
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
       
@@ -310,7 +454,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Interval Check-in Modal */}
+      {/* Interval Check-in Modal - Main Mode Only */}
       <Modal 
         isOpen={isIntervalModalOpen} 
         onClose={() => {/* Prevent closing without logging */}} 
