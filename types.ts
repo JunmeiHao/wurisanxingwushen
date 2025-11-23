@@ -20,16 +20,27 @@ export interface DayRecord {
   status: 'active' | 'completed';
 }
 
+export type AIProvider = 'gemini' | 'openai' | 'deepseek' | 'qwen' | 'custom';
+
 export interface AppSettings {
   intervalMinutes: number;
   soundEnabled: boolean;
   notificationsEnabled: boolean;
   themeColor: string;
+  // AI Settings
+  aiProvider: AIProvider;
+  aiApiKey: string;
+  aiBaseUrl: string;
+  aiModel: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   intervalMinutes: 30,
   soundEnabled: true,
   notificationsEnabled: true,
-  themeColor: 'indigo'
+  themeColor: 'indigo',
+  aiProvider: 'gemini',
+  aiApiKey: '', // User entered key. If empty for Gemini, falls back to env var
+  aiBaseUrl: '',
+  aiModel: ''
 };

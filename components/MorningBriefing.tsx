@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DayRecord, TodoItem } from '../types';
 import { getYesterdayDateString, getDayRecord, getTodayDateString } from '../services/storageService';
-import { generateDaySummary, generateMorningPlanSuggestion } from '../services/geminiService';
+import { generateDaySummary, generateMorningPlanSuggestion } from '../services/aiService';
 import { Loader2, CheckSquare, Calendar, Sparkles, Plus, Trash2 } from 'lucide-react';
 
 interface MorningBriefingProps {
@@ -26,7 +26,8 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
       const yRec = getDayRecord(yStr);
       setYesterdayRecord(yRec);
 
-      if (yRec && process.env.API_KEY) {
+      // Always attempt generation, the service handles key checks
+      if (yRec) {
         setLoadingSummary(true);
         try {
           const summary = await generateDaySummary(yRec);
@@ -86,7 +87,7 @@ export const MorningBriefing: React.FC<MorningBriefingProps> = ({ onComplete, in
                <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
                   {loadingSummary ? (
                     <div className="flex items-center gap-3 text-indigo-600">
-                      <Loader2 className="animate-spin" /> Analyzing logs with Gemini...
+                      <Loader2 className="animate-spin" /> Analyzing logs with AI...
                     </div>
                   ) : (
                     <div className="prose prose-slate max-w-none">
