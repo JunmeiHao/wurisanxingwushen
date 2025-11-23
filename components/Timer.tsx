@@ -146,7 +146,7 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
     window.open(
       `${window.location.pathname}?mode=mini`, 
       'FocusFlowMini', 
-      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+      `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,alwaysOnTop=yes`
     );
   };
 
@@ -194,7 +194,7 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
             <button 
               onClick={openMiniMode}
               className="p-2 rounded-full text-slate-300 hover:text-indigo-600 hover:bg-slate-50 transition-all duration-200"
-              title="Pop out Window"
+              title="Pop out Mini Window"
             >
               <ExternalLink size={20} />
             </button>

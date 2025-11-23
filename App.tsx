@@ -71,7 +71,7 @@ const App: React.FC = () => {
       
       switch (type) {
         case 'SYNC_STATE':
-          // Update local state from broadcast
+          // Update local state from broadcast if significant drift
           if (payload.timeLeft !== undefined && Math.abs(payload.timeLeft - timeLeft) > 2) {
              setTimeLeft(payload.timeLeft);
           }
@@ -88,7 +88,14 @@ const App: React.FC = () => {
         case 'TIMER_COMPLETE':
           setIsActive(false);
           setTimeLeft(0);
-          handleTimerComplete(false); // Handle UI but don't re-broadcast
+          // If in mini mode, we want to show the form immediately
+          // If in main mode, we show the modal
+          // We don't call handleTimerComplete to avoid loop of playing sound/notification again
+          // but we do set the UI state
+          setIsIntervalModalOpen(true);
+          if (document.visibilityState === 'hidden') {
+              // Try to notify user if window is hidden
+          }
           break;
         case 'DATA_UPDATED':
           setTodayRecord(getOrInitTodayRecord());
@@ -97,7 +104,7 @@ const App: React.FC = () => {
     };
 
     return () => channel.close();
-  }, [timeLeft, settings.intervalMinutes]); // Re-bind if necessary, though logic handles stateless updates
+  }, [timeLeft, settings.intervalMinutes]);
 
   // Timer Logic
   useEffect(() => {
@@ -106,9 +113,8 @@ const App: React.FC = () => {
         const newTime = timeLeft - 1;
         setTimeLeft(newTime);
         
-        // Broadcast sync occasionally (every 5 seconds) to keep windows aligned
-        // or just rely on start/stop. Let's do a loose sync.
-        if (newTime % 5 === 0 && channelRef.current) {
+        // Broadcast sync occasionally (every 2 seconds) to keep windows aligned
+        if (newTime % 2 === 0 && channelRef.current) {
             channelRef.current.postMessage({
                 type: 'SYNC_STATE',
                 payload: { timeLeft: newTime, isActive: true }
@@ -127,7 +133,7 @@ const App: React.FC = () => {
   const handleTimerComplete = (shouldBroadcast = true) => {
     setIsActive(false);
     
-    // Play sound (both windows will try, browser might block one, that's fine)
+    // Play sound
     if (settings.soundEnabled) {
        try {
          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a');
@@ -136,8 +142,11 @@ const App: React.FC = () => {
        } catch(e) {}
     }
 
-    // Notification (only from Main window ideally, or both is fine as they dedupe by tag)
-    if (settings.notificationsEnabled && Notification.permission === "granted" && !isMiniMode) {
+    // Notification handling
+    if (isMiniMode) {
+        // If we are the mini window, try to focus ourselves
+        window.focus();
+    } else if (settings.notificationsEnabled && Notification.permission === "granted") {
       try {
         const n = new Notification("Time's Up!", { 
             body: "Click here to log your accomplishment.",
@@ -150,9 +159,6 @@ const App: React.FC = () => {
           setIsIntervalModalOpen(true);
         };
       } catch (e) {}
-    } else if (isMiniMode) {
-        // If mini mode, bring window to front if possible
-        window.focus();
     }
 
     setIsIntervalModalOpen(true);
@@ -263,42 +269,48 @@ const App: React.FC = () => {
   if (isMiniMode) {
     return (
       <div className="h-screen w-screen bg-slate-50 flex flex-col overflow-hidden">
-        {/* Header/Draggable area */}
-        <div className="h-6 bg-slate-100 w-full flex items-center justify-center drag-handle cursor-move">
-           <div className="w-10 h-1 rounded-full bg-slate-300" />
+        {/* Draggable header area */}
+        <div className="h-8 bg-slate-100 w-full flex items-center justify-center cursor-move border-b border-slate-200">
+           <div className="w-12 h-1.5 rounded-full bg-slate-300" />
         </div>
 
         {isIntervalModalOpen ? (
-          // Log Input View
-          <div className="flex-1 p-6 flex flex-col animate-in fade-in duration-300">
-             <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full mb-3">
+          // Log Input View (Fills the mini window)
+          <div className="flex-1 p-6 flex flex-col animate-in fade-in zoom-in duration-300 bg-white">
+             <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full mb-2 animate-bounce">
                    <CheckCircle2 size={24} />
                 </div>
                 <h2 className="text-xl font-bold text-slate-800">Time's Up!</h2>
-                <p className="text-slate-500 text-sm">What did you achieve?</p>
+                <p className="text-slate-500 text-xs">What did you achieve?</p>
              </div>
              
              <textarea 
-               className="flex-1 w-full p-4 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none shadow-sm text-slate-700"
+               className="flex-1 w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none shadow-inner text-slate-700 mb-4"
                placeholder="I worked on..."
                value={intervalLogText}
                onChange={(e) => setIntervalLogText(e.target.value)}
                autoFocus
+               onKeyDown={(e) => {
+                   if(e.key === 'Enter' && !e.shiftKey) {
+                       e.preventDefault();
+                       if(intervalLogText.trim()) handleIntervalLogSubmit();
+                   }
+               }}
              />
              
              <button 
                onClick={handleIntervalLogSubmit}
                disabled={!intervalLogText.trim()}
-               className="mt-4 w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+               className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 shadow-lg shadow-indigo-200"
              >
-               <Save size={18} /> Save Log
+               <Save size={18} /> Save & Reset
              </button>
           </div>
         ) : (
-          // Timer View
+          // Timer View (Compact)
           <div className="flex-1 flex flex-col items-center justify-center p-4">
-             <div className="scale-75 origin-center">
+             <div className="transform scale-90">
                <Timer 
                  timeLeft={timeLeft} 
                  totalSeconds={settings.intervalMinutes * 60} 
@@ -309,17 +321,18 @@ const App: React.FC = () => {
              
              <button
                 onClick={toggleTimer}
-                className={`mt-4 flex items-center gap-2 px-6 py-2 rounded-full font-bold shadow-md transition-all ${
+                className={`mt-6 flex items-center gap-2 px-8 py-3 rounded-full font-bold shadow-md transition-all ${
                   isActive 
-                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' 
+                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200' 
                     : 'bg-indigo-600 text-white hover:bg-indigo-700'
                 }`}
               >
-                {isActive ? <><Pause size={18} fill="currentColor" /> Pause</> : <><Play size={18} fill="currentColor" /> Start</>}
+                {isActive ? <><Pause size={20} fill="currentColor" /> Pause</> : <><Play size={20} fill="currentColor" /> Start</>}
               </button>
               
-              <div className="mt-6 text-xs text-slate-400 font-medium">
-                 {todayRecord?.logs.length || 0} sessions today
+              <div className="mt-8 text-xs text-slate-400 font-medium flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                 {todayRecord?.logs.length || 0} sessions completed
               </div>
           </div>
         )}
