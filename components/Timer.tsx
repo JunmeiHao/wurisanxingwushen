@@ -28,7 +28,7 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
     if (timeLeft === 0 && !isActive) {
       document.title = "⏰ 时间到!";
     } else {
-      document.title = isActive ? `${timeString} - 专注流` : 'FocusFlow';
+      document.title = isActive ? `${timeString} - 专注流` : '吾日三省吾身';
     }
   }, [timeLeft, isActive, timeString]);
 

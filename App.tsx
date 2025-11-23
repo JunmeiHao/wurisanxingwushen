@@ -4,7 +4,7 @@ import {
   History, 
   Settings as SettingsIcon, 
   LogOut, 
-  Coffee,
+  BrainCircuit,
   Play,
   Pause,
   Save,
@@ -480,11 +480,11 @@ const App: React.FC = () => {
       <aside className="w-20 lg:w-72 bg-white/80 backdrop-blur-xl border-r border-white/50 flex flex-col items-center lg:items-start py-8 px-2 lg:px-6 transition-all z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         <div className="mb-10 flex items-center gap-3 px-2 lg:w-full">
            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-             <Coffee size={20} />
+             <BrainCircuit size={20} />
            </div>
            <div className="hidden lg:block">
-              <span className="block text-xl font-bold text-slate-800 tracking-tight">FocusFlow</span>
-              <span className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest">专业工作台</span>
+              <span className="block text-xl font-bold text-slate-800 tracking-tight">吾日三省吾身</span>
+              <span className="block text-[10px] font-medium text-slate-400 uppercase tracking-widest">智能反思助手</span>
            </div>
         </div>
         

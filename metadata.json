@@ -1,5 +1,5 @@
 {
-  "name": "FocusFlow - Smart Work Journal",
+  "name": "吾日三省吾身- Smart Work Journal",
   "description": "A productivity companion that combines Pomodoro-style intervals with intelligent daily logging and morning reviews.",
   "requestFramePermissions": [
     "microphone"
