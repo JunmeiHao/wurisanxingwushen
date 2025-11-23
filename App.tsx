@@ -65,15 +65,39 @@ const App: React.FC = () => {
 
   const handleTimerComplete = () => {
     setIsActive(false);
-    if (settings.notificationsEnabled && Notification.permission === "granted") {
-      new Notification("Focus Interval Complete", { body: "Time to log your progress!" });
-    } else if (settings.soundEnabled) {
-       // Simple beep fallback or sound play could go here
+    
+    // 1. Play Sound
+    if (settings.soundEnabled) {
        try {
-         const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+         // Using a distinct "ding" sound
+         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.m4a');
+         audio.volume = 0.5;
          audio.play();
-       } catch(e) {}
+       } catch(e) {
+         console.error("Audio play failed", e);
+       }
     }
+
+    // 2. Send Sticky Notification
+    if (settings.notificationsEnabled && Notification.permission === "granted") {
+      try {
+        const n = new Notification("Time's Up!", { 
+            body: "Click here to log your accomplishment.",
+            requireInteraction: true, // Keep notification on screen until clicked
+            tag: 'focusflow-timer'
+        });
+        
+        // Key feature: Click notification to bring window to front
+        n.onclick = () => {
+          window.focus();
+          n.close();
+          setIsIntervalModalOpen(true);
+        };
+      } catch (e) {
+        console.error("Notification failed", e);
+      }
+    }
+
     setIsIntervalModalOpen(true);
   };
 

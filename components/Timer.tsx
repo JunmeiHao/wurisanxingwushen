@@ -24,7 +24,11 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive }
 
   // Dynamic title update
   useEffect(() => {
-    document.title = isActive ? `${timeString} - FocusFlow` : 'FocusFlow';
+    if (timeLeft === 0 && !isActive) {
+      document.title = "⏰ Time's Up!";
+    } else {
+      document.title = isActive ? `${timeString} - FocusFlow` : 'FocusFlow';
+    }
   }, [timeLeft, isActive, timeString]);
 
   // Draw to hidden canvas for PiP stream
@@ -41,6 +45,23 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive }
     const centerY = height / 2;
     const radius = 180; // Large radius for high-res canvas
 
+    // Special State: Time is Up! (Red Alert Background)
+    if (timeLeft === 0) {
+      ctx.fillStyle = '#ef4444'; // Red-500
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 100px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText("TIME UP", centerX, centerY - 30);
+      
+      ctx.font = 'bold 50px sans-serif';
+      ctx.fillText("Click to Log", centerX, centerY + 60);
+      return;
+    }
+
+    // Normal State Drawing
     // Clear and Fill Background
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#f8fafc'; // slate-50
