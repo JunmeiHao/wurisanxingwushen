@@ -82,8 +82,28 @@ const generateText = async (prompt: string, systemInstruction?: string): Promise
       });
 
       if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API 错误 ${response.status}: ${err}`);
+        const errText = await response.text();
+        let errorMessage = `API 请求失败 (${response.status})`;
+
+        try {
+            // 尝试解析 JSON 错误以获取更友好的提示
+            const errJson = JSON.parse(errText);
+            const code = errJson.error?.code;
+            const msg = errJson.error?.message;
+
+            if (code === 'insufficient_quota') {
+                errorMessage = "API 余额不足 (Quota Exceeded)。请检查您的服务商账单，或在设置中切换回 Gemini。";
+            } else if (code === 'invalid_api_key') {
+                errorMessage = "API Key 无效。请在设置中检查您的密钥。";
+            } else if (msg) {
+                errorMessage = `API 错误: ${msg}`;
+            }
+        } catch (e) {
+            // 解析失败，使用原始文本
+            errorMessage = `API 错误 (${response.status}): ${errText.slice(0, 100)}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -92,7 +112,8 @@ const generateText = async (prompt: string, systemInstruction?: string): Promise
 
   } catch (error: any) {
     console.error("AI Service Error:", error);
-    return `错误: ${error.message || "无法连接到 AI 服务"}`;
+    // 直接返回错误信息给 UI 显示，而不是 generic error
+    return `⚠️ ${error.message || "无法连接到 AI 服务"}`;
   }
 };
 
