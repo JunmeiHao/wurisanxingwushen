@@ -183,20 +183,25 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
         
         {/* External Window Controls - Only show in Main Mode */}
         {!isMini && (
-          <div className="flex gap-2 mt-3">
+          <div className="flex flex-col items-center gap-2 mt-4">
+             {/* Pop Out Button (Highlight this one) */}
+             <button 
+              onClick={openMiniMode}
+              className="flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-full hover:bg-indigo-100 transition-all text-sm font-medium border border-indigo-100 shadow-sm"
+              title="Open standalone timer window"
+            >
+              <ExternalLink size={14} />
+              <span>Pop out</span>
+            </button>
+
+            {/* PiP Button */}
             <button 
               onClick={togglePiP}
-              className={`p-2 rounded-full transition-all duration-200 ${isPipActive ? 'bg-indigo-100 text-indigo-600' : 'text-slate-300 hover:text-indigo-600 hover:bg-slate-50'}`}
+              className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs transition-all ${isPipActive ? 'text-indigo-600 bg-slate-50' : 'text-slate-400 hover:text-slate-600'}`}
               title={isPipActive ? "Close Floating Timer" : "Float Timer (PiP)"}
             >
-              <PictureInPicture size={20} />
-            </button>
-            <button 
-              onClick={openMiniMode}
-              className="p-2 rounded-full text-slate-300 hover:text-indigo-600 hover:bg-slate-50 transition-all duration-200"
-              title="Pop out Mini Window"
-            >
-              <ExternalLink size={20} />
+              <PictureInPicture size={14} />
+              <span>{isPipActive ? 'Close Float' : 'Float Mini'}</span>
             </button>
           </div>
         )}
