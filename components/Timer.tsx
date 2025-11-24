@@ -26,9 +26,9 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
   // Dynamic title update
   useEffect(() => {
     if (timeLeft === 0 && !isActive) {
-      document.title = "⏰ 时间到!";
+      document.title = "⏰ Time's Up!";
     } else {
-      document.title = isActive ? `${timeString} - 专注流` : '吾日三省吾身';
+      document.title = isActive ? `${timeString} - FocusFlow` : 'FocusFlow';
     }
   }, [timeLeft, isActive, timeString]);
 
@@ -52,13 +52,13 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
       ctx.fillRect(0, 0, width, height);
       
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 100px "Microsoft YaHei", sans-serif';
+      ctx.font = 'bold 100px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText("时间到", centerX, centerY - 30);
+      ctx.fillText("TIME UP", centerX, centerY - 30);
       
-      ctx.font = 'bold 40px "Microsoft YaHei", sans-serif';
-      ctx.fillText("点击记录", centerX, centerY + 60);
+      ctx.font = 'bold 50px sans-serif';
+      ctx.fillText("Click to Log", centerX, centerY + 60);
       return;
     }
 
@@ -96,8 +96,8 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
 
     // Draw Status Text
     ctx.fillStyle = '#94a3b8'; // slate-400
-    ctx.font = 'bold 40px "Microsoft YaHei", sans-serif';
-    ctx.fillText(isActive ? '专注中' : '已暂停', centerX, centerY + 80);
+    ctx.font = 'bold 40px sans-serif';
+    ctx.fillText(isActive ? 'FOCUSING' : 'PAUSED', centerX, centerY + 80);
 
   }, [timeLeft, isActive, percentage, timeString]);
 
@@ -123,7 +123,7 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
       }
     } catch (error) {
       console.error("Failed to enter Picture-in-Picture mode:", error);
-      alert("此功能需要现代浏览器支持 (Chrome/Edge/Safari).");
+      alert("This feature requires a modern browser (Chrome/Edge/Safari).");
     }
   };
 
@@ -165,7 +165,7 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
       <div className="absolute flex flex-col items-center justify-center text-slate-700">
         <span className={`${isMini ? 'text-4xl' : 'text-6xl'} font-bold tracking-tighter font-mono`}>{timeString}</span>
         <span className="text-sm font-medium text-slate-400 mt-2 uppercase tracking-widest">
-            {isActive ? '专注中' : '已暂停'}
+            {isActive ? 'Focusing' : 'Paused'}
         </span>
         
         {/* PiP Button - Small and Subtle */}
@@ -173,10 +173,10 @@ export const Timer: React.FC<TimerProps> = ({ totalSeconds, timeLeft, isActive, 
           <button 
             onClick={togglePiP}
             className={`mt-4 flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all ${isPipActive ? 'text-indigo-600 bg-indigo-50 ring-1 ring-indigo-100' : 'text-slate-300 hover:text-slate-500 hover:bg-slate-50'}`}
-            title={isPipActive ? "关闭悬浮窗" : "开启画中画模式"}
+            title={isPipActive ? "Close Floating Timer" : "Watch in PiP Mode"}
           >
             <PictureInPicture size={12} />
-            <span>{isPipActive ? '关闭' : '画中画'}</span>
+            <span>{isPipActive ? 'Close' : 'PIP'}</span>
           </button>
         )}
       </div>

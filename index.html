@@ -3,35 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>吾日三省吾身</title>
+    <title>FocusFlow</title>
     <!-- Tailwind CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
       }
       /* Custom Scrollbar for webkit */
       ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 8px;
       }
       ::-webkit-scrollbar-track {
         background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
         background: #cbd5e1; 
-        border-radius: 3px;
+        border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
         background: #94a3b8; 
-      }
-      .glass-panel {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
       }
     </style>
     <!-- Polyfill for process to avoid ReferenceError in browser -->
@@ -52,7 +44,7 @@
 }
 </script>
 </head>
-  <body class="text-slate-900 antialiased overflow-hidden">
+  <body class="bg-slate-50 text-slate-900 antialiased">
     <div id="root"></div>
     <!-- Entry point for Vite -->
     <script type="module" src="/index.tsx"></script>
